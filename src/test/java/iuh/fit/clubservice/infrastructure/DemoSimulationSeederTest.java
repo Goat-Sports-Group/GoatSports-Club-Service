@@ -28,6 +28,27 @@ class DemoSimulationSeederTest {
     }
 
     @Test
+    void matchmakingClubsArePairsOfDisjointLocalTeams() {
+        List<DemoSimulationSeeder.Club> clubs = DemoSimulationSeeder.matchmakingClubs();
+        Set<UUID> everyone = new HashSet<>();
+        assertThat(clubs).hasSize(12).allSatisfy(club -> {
+            assertThat(club.city().name()).isEqualTo("Hồ Chí Minh");
+            assertThat(club.owner().sports()).contains(club.sport());
+            club.everyone().forEach(player -> assertThat(everyone.add(player.userId())).as(club.name()).isTrue());
+        });
+        // Mỗi bên đủ người cho hình thức đông nhất của môn.
+        assertThat(clubs).allMatch(club -> club.everyone().size() == switch (club.sport()) {
+            case "FOOTBALL" -> 11;
+            case "VOLLEYBALL" -> 6;
+            case "BASKETBALL" -> 5;
+            default -> 2;
+        });
+        // Không trùng tên/ id với CLB mô phỏng.
+        Set<UUID> simulated = new HashSet<>(DemoSimulationSeeder.clubs().stream().map(DemoSimulationSeeder.Club::id).toList());
+        assertThat(clubs).noneMatch(club -> simulated.contains(club.id()));
+    }
+
+    @Test
     void nobodyPlaysForTwoTeamsInOneTournament() {
         List<DemoSimulationSeeder.Club> clubs = DemoSimulationSeeder.clubs();
         for (DemoTournaments.Tournament tournament : DemoTournaments.ALL) {

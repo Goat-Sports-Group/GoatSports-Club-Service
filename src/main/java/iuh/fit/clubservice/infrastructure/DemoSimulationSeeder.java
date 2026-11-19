@@ -118,6 +118,42 @@ public class DemoSimulationSeeder implements CommandLineRunner {
         return clubs;
     }
 
+    /**
+     * Cặp CLB để demo AI ghép trận ở TP.HCM, mỗi môn một cặp "Rồng Xanh" / "Hổ Vàng" (chỉ số người chơi
+     * {@link DemoPopulation}, người đầu là chủ CLB = đội trưởng). Người của các CLB này không trùng nhau nên hai đội
+     * trưởng chọn đồng đội ở tab "Thành viên CLB" là ghép được mọi hình thức: bóng đá 5/7/11, bóng rổ 3x3/5x5, bóng
+     * chuyền 6, đơn/đôi. Ai-service bỏ họ khỏi kèo mô phỏng từ 19/11/2026 (matchmaking_simulation.DEMO_RESERVED) để
+     * trang Ghép trận của họ luôn trống. Bóng rổ có 2 người không chơi môn này (3, 6): HCM chỉ có 8 người chơi bóng rổ.
+     */
+    static final List<MatchmakingTeam> MATCHMAKING_TEAMS = List.of(
+            new MatchmakingTeam("FOOTBALL", "FC Rồng Xanh", List.of(25, 261, 34, 204, 296, 289, 288, 182, 39, 175, 221)),
+            new MatchmakingTeam("FOOTBALL", "FC Hổ Vàng", List.of(183, 20, 37, 132, 51, 194, 17, 209, 92, 113, 222)),
+            new MatchmakingTeam("BASKETBALL", "Bóng Rổ Rồng Xanh", List.of(282, 237, 254, 156, 3)),
+            new MatchmakingTeam("BASKETBALL", "Bóng Rổ Hổ Vàng", List.of(13, 85, 143, 299, 6)),
+            new MatchmakingTeam("VOLLEYBALL", "Bóng Chuyền Rồng Xanh", List.of(84, 190, 14, 108, 115, 33)),
+            new MatchmakingTeam("VOLLEYBALL", "Bóng Chuyền Hổ Vàng", List.of(170, 219, 198, 98, 138, 273)),
+            new MatchmakingTeam("TENNIS", "CLB Tennis Rồng Xanh", List.of(262, 159)),
+            new MatchmakingTeam("TENNIS", "CLB Tennis Hổ Vàng", List.of(57, 255)),
+            new MatchmakingTeam("PICKLEBALL", "Pickleball Rồng Xanh", List.of(230, 235)),
+            new MatchmakingTeam("PICKLEBALL", "Pickleball Hổ Vàng", List.of(117, 290)),
+            new MatchmakingTeam("BADMINTON", "CLB Cầu Lông Rồng Xanh", List.of(72, 242)),
+            new MatchmakingTeam("BADMINTON", "CLB Cầu Lông Hổ Vàng", List.of(56, 270)));
+
+    record MatchmakingTeam(String sport, String name, List<Integer> players) { }
+
+    static List<Club> matchmakingClubs() {
+        List<DemoPopulation.Player> players = DemoPopulation.players();
+        List<Club> clubs = new ArrayList<>();
+        for (MatchmakingTeam team : MATCHMAKING_TEAMS) {
+            List<DemoPopulation.Player> crew = team.players().stream().map(players::get).toList();
+            DemoPopulation.Player owner = crew.get(0);
+            clubs.add(new Club(id("sim-club", team.name()), team.name(), team.sport(), owner.city(), owner.district(),
+                    owner, List.of(), crew.subList(1, crew.size()), List.of(), LocalDateTime.of(2026, 10, 1, 9, 0),
+                    true, false, DayOfWeek.SATURDAY, 7));
+        }
+        return clubs;
+    }
+
     private static String clubName(String sport, String district, Random random) {
         return switch (sport) {
             case "FOOTBALL" -> "FC " + district + " " + pick(random, "United", "Warriors", "Stars", "Lions", "Tigers",
@@ -147,7 +183,7 @@ public class DemoSimulationSeeder implements CommandLineRunner {
 
     void seed(LocalDateTime now) {
         List<Club> clubs = clubs();
-        int newClubs = seedClubs(clubs);
+        int newClubs = seedClubs(clubs) + seedClubs(matchmakingClubs());
         int activities = seedActivities(clubs);
         int[] totals = new int[3];
         for (DemoTournaments.Tournament tournament : DemoTournaments.ALL) {
