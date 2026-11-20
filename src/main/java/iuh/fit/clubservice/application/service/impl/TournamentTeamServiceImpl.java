@@ -180,6 +180,9 @@ public class TournamentTeamServiceImpl implements TournamentTeamService {
             throw new ServiceException("Đội này không còn tham gia giải.");
         }
         support.assertRegistrationOpen(tournament, "Giải đã đóng đăng ký nên không đổi đội hình được.");
+        if (captain && support.feePaid(registration)) {
+            throw new ServiceException("Đội đã đóng lệ phí nên không bỏ thành viên được nữa.");
+        }
 
         List<TournamentLineup> lineup = lineupRepository.findByRegistrationId(registrationId);
         TournamentLineup target = lineup.stream()

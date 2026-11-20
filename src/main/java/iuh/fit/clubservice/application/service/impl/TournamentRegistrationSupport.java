@@ -106,6 +106,12 @@ class TournamentRegistrationSupport {
         return TournamentLifecyclePolicy.effectiveStatus(tournament, LocalDate.now());
     }
 
+    /** Đội đã đóng lệ phí: đội hình đã chốt theo khoản phí đó. */
+    boolean feePaid(TournamentRegistration registration) {
+        return paymentRepository.findByRegistrationId(registration.getRegistrationId())
+                .map(payment -> payment.getStatus() == FeePaymentStatus.SUCCEEDED).orElse(false);
+    }
+
     long acceptedCount(List<TournamentLineup> lineup) {
         return lineup.stream().filter(row -> row.getMemberStatus() == LineupMemberStatus.ACCEPTED).count();
     }

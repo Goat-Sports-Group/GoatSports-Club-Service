@@ -356,6 +356,20 @@ class TournamentRegistrationServiceImplTest {
     }
 
     @Test
+    @DisplayName("đội đã đóng lệ phí thì đội trưởng không bỏ thành viên được")
+    void paidTeamKeepsItsRoster() throws ServiceException {
+        useTournament("BADMINTON_DOUBLES", 0D, 8);
+        UUID captain = UUID.randomUUID();
+        UUID partner = UUID.randomUUID();
+        TournamentRegistrationResponseCommand created = service.register(team(captain, "Đôi P", partner));
+        when(paymentRepository.findByRegistrationId(created.getRegistrationId())).thenReturn(Optional.of(
+                TournamentPayment.builder().registrationId(created.getRegistrationId()).status(FeePaymentStatus.SUCCEEDED).build()));
+
+        assertThatThrownBy(() -> teams.removeMember(tournamentId, created.getRegistrationId(), captain, partner))
+                .isInstanceOf(ServiceException.class).hasMessageContaining("đã đóng lệ phí");
+    }
+
+    @Test
     @DisplayName("đóng đăng ký rồi thì không bỏ thành viên, không rời đội, không rút đội được")
     void rosterIsFrozenOnceRegistrationCloses() throws ServiceException {
         useTournament("BADMINTON_DOUBLES", 0D, 8);
